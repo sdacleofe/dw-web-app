@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # dw-web-app
 =======
 # Data Warehouse Web App
