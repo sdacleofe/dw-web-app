@@ -49,36 +49,29 @@ A Laravel + Vue 3 application for browsing, querying, and exporting data from a 
 
     - Set your database credentials in `.env`
 
-5. **Generate application key**
-
-    ```sh
-    php artisan key:generate
-    ```
-
-6. **Run migrations**
+5. **Run migrations**
 
     ```sh
     php artisan migrate
     ```
 
-7. **Start the development servers**
+6. **Start the development servers**
 
     ```sh
     php artisan serve
     npm run dev
     ```
 
-8. **Visit the app**
+7. **Visit the app**
     - Open [http://localhost:8000](http://localhost:8000) in your browser
 
 ## Usage
 
 -   Select a table from the sidebar to preview data.
--   Use the SQL editor to run simple SELECT queries.
+-   Use the SQL editor to run simple `SELECT` queries.
 -   Download data as CSV using the download button.
 
 ## Security
 
 -   Only simple SELECT queries are allowed.
 -   Queries with JOIN, UNION, or destructive statements are blocked.
->>>>>>> bac9f61 (Initial commit: Laravel + Vue 3 Data Warehouse Web App)

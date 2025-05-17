@@ -15,4 +15,5 @@ export const useNotificationStore = defineStore('notification', {
             this.notifications = this.notifications.filter(n => n.id !== id)
         }
     }
+    
 })

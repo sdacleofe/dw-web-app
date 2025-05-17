@@ -32,6 +32,8 @@ class DatabaseController extends Controller
     {
         $sql = $request->input('query');
         $selectedTable = $request->input('table');
+        $perPage = (int)($request->input('per_page') ?? 100);
+        $page = (int)($request->input('page') ?? 1);
 
         try {
             $forbidden = '/\b(update|delete|insert|drop|alter|create|truncate|replace|grant|revoke|join|union|;|--|#|\/\*)\b/i';
@@ -54,13 +56,24 @@ class DatabaseController extends Controller
                 return response()->json(['error' => 'Only simple SELECT queries are allowed.'], 400);
             }
 
-            $data = DB::select($sql, []);
+            // Count total rows
+            $countSql = preg_replace('/^select\s+.+?\s+from\s+/is', 'select count(*) as total from ', $sql, 1);
+            $countResult = DB::select($countSql);
+            $total = isset($countResult[0]->total) ? (int)$countResult[0]->total : 0;
+
+            // Add LIMIT/OFFSET for pagination
+            $offset = ($page - 1) * $perPage;
+            $paginatedSql = $sql . " LIMIT $perPage OFFSET $offset";
+            $data = DB::select($paginatedSql, []);
 
             $rows = array_map(fn($row) => (array)$row, $data);
             return response()->json([
                 'data' => $rows,
                 'headers' => count($rows) ? array_keys($rows[0]) : [],
-                'total' => count($rows),
+                'total' => $total,
+                'current_page' => $page,
+                'last_page' => $perPage > 0 ? (int)ceil($total / $perPage) : 1,
+                'per_page' => $perPage,
             ]);
         } catch (\Exception $e) {
             Log::error('Query error: ' . $e->getMessage(), [
