@@ -1,5 +1,5 @@
 # dw-web-app
-=======
+
 # Data Warehouse Web App
 
 A Laravel + Vue 3 application for browsing, querying, and exporting data from a PostgreSQL data warehouse.
