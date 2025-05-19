@@ -5,7 +5,6 @@
                 Data
                 <button class="ml-2 p-1 rounded hover:bg-gray-200 transition" title="Reset selection"
                     @click="resetSelection" type="button">
-                    <!-- New Refresh/Reset Icon -->
                     <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -84,7 +83,6 @@ function selectChild(sub) {
     }
 }
 
-// Reset selection and hide table preview
 function resetSelection() {
     selectedChild.value = null
     tableStore.setSelectedTable(null)

@@ -71,11 +71,10 @@ watch(() => bottomBarStore.isVisible, (newVal) => {
 
 function toggleBottombar() {
     bottomBarStore.toggle()
-    // If showing, restore height if minimized
     if (bottomBarStore.isVisible && bottombarHeight.value <= minHeight) {
         bottombarHeight.value = 300
     }
-    // If hiding, minimize height
+    
     if (!bottomBarStore.isVisible) {
         bottombarHeight.value = 0
     }
