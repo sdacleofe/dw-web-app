@@ -11,12 +11,14 @@
                     </svg>
                     Rows: <span class="ml-1 font-bold">{{ tableStore.pagination.total }}</span>
                 </span>
-                <div v-if="pagination.last_page > 1" class="flex items-center gap-2">
-                    <button :disabled="pagination.current_page === 1" @click="changePage(pagination.current_page - 1)"
-                        class="px-2 py-1 border rounded">Prev</button>
-                    <span>Page {{ pagination.current_page }} of {{ pagination.last_page }}</span>
-                    <button :disabled="pagination.current_page === pagination.last_page"
-                        @click="changePage(pagination.current_page + 1)" class="px-2 py-1 border rounded">Next</button>
+                <div v-if="tableStore.pagination.last_page > 1" class="flex items-center gap-2">
+                    <button class="px-2 py-1 border rounded disabled:opacity-50"
+                        :disabled="tableStore.pagination.current_page === 1"
+                        @click="changePage(tableStore.pagination.current_page - 1)">Prev</button>
+                    <span>Page {{ tableStore.pagination.current_page }} of {{ tableStore.pagination.last_page }}</span>
+                    <button class="px-2 py-1 border rounded disabled:opacity-50"
+                        :disabled="tableStore.pagination.current_page === tableStore.pagination.last_page"
+                        @click="changePage(tableStore.pagination.current_page + 1)">Next</button>
                 </div>
             </div>
             <div class="overflow-x-auto w-full">
@@ -55,16 +57,10 @@ const { tableData, pagination } = storeToRefs(tableStore)
 const loading = ref(false)
 
 function changePage(page) {
-    loading.value = true
-    if (pagination.value.isQuery) {
-        tableStore.fetchQueryPage(page).then(() => {
-            loading.value = false
-        })
-    } else if (pagination.value.table) {
+    if (pagination.value.table) {
         tableStore.fetchTableData(pagination.value.table, page)
+        loading.value = true
         setTimeout(() => { loading.value = false }, 500)
-    } else {
-        loading.value = false
     }
 }
 </script>

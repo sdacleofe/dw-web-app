@@ -1,10 +1,6 @@
 <template>
-    <transition name="bottombar-fade">
-        <div v-if="visible && isMobile" class="fixed inset-0 bg-black bg-opacity-40 z-30" @click="toggleBottombar">
-        </div>
-    </transition>
     <transition name="bottombar-slide-fade">
-        <div v-if="visible && bottombarHeight > minHeight"
+        <div v-if="bottombarHeight > minHeight"
             class="bottombar min-h-[250px] w-full bg-white text-gray-700 flex flex-col px-6 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] border-t border-gray-200 z-20 overflow-x-auto relative"
             :style="{ height: bottombarHeight + 'px' }">
             <div class="flex items-center justify-between w-full h-14 border-b border-gray-100 relative">
@@ -39,49 +35,24 @@
         </div>
     </transition>
     <transition name="bottombar-fade">
-        <button v-if="!visible || bottombarHeight <= minHeight"
+        <button v-if="bottombarHeight <= minHeight"
             class="fixed left-1/2 -translate-x-1/2 bottom-2 bg-gray-200 rounded px-3 py-1 shadow z-30"
-            @click="toggleBottombar" title="Show bottombar">▲</button>
+            @click="restoreBottombar" title="Show bottombar">▲</button>
     </transition>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { useBottomBarStore } from '../stores/bottombarStore'
-import { useAttrs } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import RunQuery from '../Components/RunQuery.vue'
-
-const $attrs = useAttrs()
 
 const minHeight = 250
 const maxHeight = 500
 const bottombarHeight = ref(300)
 let isResizing = false
 
-const isMobile = ref(window.innerWidth < 1024)
-const bottomBarStore = useBottomBarStore()
-
-const visible = ref(bottomBarStore.isVisible)
-
 const runQueryRef = ref(null)
 
-watch(() => bottomBarStore.isVisible, (newVal) => {
-    visible.value = newVal
-})
-
-function toggleBottombar() {
-    bottomBarStore.toggle()
-    if (bottomBarStore.isVisible && bottombarHeight.value <= minHeight) {
-        bottombarHeight.value = 300
-    }
-    
-    if (!bottomBarStore.isVisible) {
-        bottombarHeight.value = 0
-    }
-}
-
 function startResize(e) {
-    if (isMobile.value) return
     isResizing = true
     document.body.style.cursor = 'ns-resize'
 }
@@ -92,43 +63,37 @@ function stopResize() {
 }
 
 function handleResize(e) {
-    if (!isResizing || isMobile.value) return
+    if (!isResizing) return
     const windowHeight = window.innerHeight
-    const newHeight = Math.min(maxHeight, Math.max(minHeight, windowHeight - e.clientY))
-    bottombarHeight.value = newHeight
+    const newHeight = Math.min(
+        maxHeight,
+        Math.max(0, windowHeight - e.clientY)
+    )
     if (newHeight <= minHeight + 5) {
-        bottomBarStore.hide()
+        bottombarHeight.value = 0
         isResizing = false
         document.body.style.cursor = ''
+    } else {
+        bottombarHeight.value = newHeight
     }
 }
 
 function minimizeBottombar() {
     bottombarHeight.value = 0
-    bottomBarStore.hide()
 }
 
-function handleWindowResize() {
-    isMobile.value = window.innerWidth < 1024
-    if (!isMobile.value) {
-        bottomBarStore.show()
-    }
-    if (isMobile.value) {
-        isResizing = false
-        document.body.style.cursor = ''
-    }
+function restoreBottombar() {
+    bottombarHeight.value = 300
 }
 
 onMounted(() => {
     window.addEventListener('mousemove', handleResize)
     window.addEventListener('mouseup', stopResize)
-    window.addEventListener('resize', handleWindowResize)
 })
 
 onBeforeUnmount(() => {
     window.removeEventListener('mousemove', handleResize)
     window.removeEventListener('mouseup', stopResize)
-    window.removeEventListener('resize', handleWindowResize)
 })
 </script>
 

@@ -8,7 +8,7 @@
             isMobile
                 ? 'fixed top-0 left-0 h-full w-4/5 max-w-xs min-w-[200px] z-40'
                 : 'relative min-w-[300px] flex-shrink-0 h-full',
-            $attrs.class
+            $attrs.class // <-- ensure passed classes are merged
         ]" :style="!isMobile ? { width: sidebarWidth + 'px' } : {}">
             <button
                 class="absolute -right-4 top-4 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center shadow"

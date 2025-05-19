@@ -28,68 +28,49 @@ class DatabaseController extends Controller
         return response()->json($tableNames);
     }
 
-public function runQuery(Request $request)
-{
-    $sql = $request->input('query');
-    $selectedTable = $request->input('table');
-    $perPage = (int)($request->input('per_page') ?? 100);
-    $page = (int)($request->input('page') ?? 1);
+    public function runQuery(Request $request)
+    {
+        $sql = $request->input('query');
+        $selectedTable = $request->input('table');
 
-    try {
-        $forbidden = '/\b(update|delete|insert|drop|alter|create|truncate|replace|grant|revoke|join|union|;|--|#|\/\*)\b/i';
-        if (!preg_match('/^\s*select\b/i', $sql) || preg_match($forbidden, $sql)) {
-            return response()->json(['error' => 'Only simple SELECT queries without JOIN, UNION, or comments are allowed.'], 400);
+        try {
+            $forbidden = '/\b(update|delete|insert|drop|alter|create|truncate|replace|grant|revoke|join|union|;|--|#|\/\*)\b/i';
+            if (!preg_match('/^\s*select\b/i', $sql) || preg_match($forbidden, $sql)) {
+                return response()->json(['error' => 'Only simple SELECT queries without JOIN, UNION, or comments are allowed.'], 400);
+            }
+
+            preg_match_all('/\bfrom\s+([a-zA-Z0-9_]+)/i', $sql, $matches);
+            $tablesInQuery = array_map('strtolower', $matches[1] ?? []);
+
+            if (
+                !$selectedTable ||
+                count($tablesInQuery) !== 1 ||
+                strtolower($selectedTable) !== $tablesInQuery[0]
+            ) {
+                return response()->json(['error' => 'Query can only reference the selected table.'], 400);
+            }
+
+            if (!preg_match('/^\s*select\s+[\*\w,\s`"]+\s+from\s+[a-zA-Z0-9_]+/i', $sql)) {
+                return response()->json(['error' => 'Only simple SELECT queries are allowed.'], 400);
+            }
+
+            $data = DB::select($sql, []);
+
+            $rows = array_map(fn($row) => (array)$row, $data);
+            return response()->json([
+                'data' => $rows,
+                'headers' => count($rows) ? array_keys($rows[0]) : [],
+                'total' => count($rows),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Query error: ' . $e->getMessage(), [
+                'sql' => $sql ?? null,
+                'table' => $selectedTable ?? null,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['error' => 'An error occurred while executing the query. Please check your SQL and try again.'], 400);
         }
-
-        preg_match_all('/\bfrom\s+([a-zA-Z0-9_]+)/i', $sql, $matches);
-        $tablesInQuery = array_map('strtolower', $matches[1] ?? []);
-
-        if (
-            !$selectedTable ||
-            count($tablesInQuery) !== 1 ||
-            strtolower($selectedTable) !== $tablesInQuery[0]
-        ) {
-            return response()->json(['error' => 'Query can only reference the selected table.'], 400);
-        }
-
-        if (!preg_match('/^\s*select\s+[\*\w,\s`"]+\s+from\s+[a-zA-Z0-9_]+/i', $sql)) {
-            return response()->json(['error' => 'Only simple SELECT queries are allowed.'], 400);
-        }
-
-        $countSql = preg_replace('/^select\s+.+?\s+from\s+/is', 'select count(*) as total from ', $sql, 1);
-        $countResult = DB::select($countSql);
-        $total = isset($countResult[0]->total) ? (int)$countResult[0]->total : 0;
-
-        $offset = ($page - 1) * $perPage;
-
-        // Remove trailing semicolon if present
-        $sql = rtrim($sql, " \t\n\r\0\x0B;");
-
-        // Only add LIMIT/OFFSET if not already present
-        if (!preg_match('/\blimit\b/i', $sql)) {
-            $sql .= " LIMIT $perPage OFFSET $offset";
-        }
-
-        $data = DB::select($sql, []);
-
-        $rows = array_map(fn($row) => (array)$row, $data);
-        return response()->json([
-            'data' => $rows,
-            'headers' => count($rows) ? array_keys($rows[0]) : [],
-            'total' => $total,
-            'current_page' => $page,
-            'last_page' => $perPage > 0 ? (int)ceil($total / $perPage) : 1,
-            'per_page' => $perPage,
-        ]);
-    } catch (\Exception $e) {
-        Log::error('Query error: ' . $e->getMessage(), [
-            'sql' => $sql ?? null,
-            'table' => $selectedTable ?? null,
-            'trace' => $e->getTraceAsString(),
-        ]);
-        return response()->json(['error' => 'An error occurred while executing the query. Please check your SQL and try again.'], 400);
     }
-}
 
     public function exportTableAll($tableName)
     {

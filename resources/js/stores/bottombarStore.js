@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { defineStore } from 'pinia'
 
 export const useBottomBarStore = defineStore('bottomBar', {
     state: () => ({
@@ -6,13 +6,13 @@ export const useBottomBarStore = defineStore('bottomBar', {
     }),
     actions: {
         toggle() {
-            this.isVisible = !this.isVisible;
-        },
-        hide() {
-            this.isVisible = false;
+            this.isVisible = !this.isVisible
         },
         show() {
-            this.isVisible = true;
+            this.isVisible = true
+        },
+        hide() {
+            this.isVisible = false
         },
     },
-});
+})
