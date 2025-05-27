@@ -8,14 +8,18 @@
             isMobile
                 ? 'fixed top-0 left-0 h-full w-4/5 max-w-xs min-w-[200px] z-40'
                 : 'relative min-w-[300px] flex-shrink-0 h-full',
-            $attrs.class // <-- ensure passed classes are merged
+            $attrs.class
         ]" :style="!isMobile ? { width: sidebarWidth + 'px' } : {}">
-            <button
-                class="absolute -right-4 top-4 bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center shadow"
-                @click="toggleSidebar" style="z-index:20" title="Hide sidebar">&#10005;</button>
-
-            <div class="mb-8">
-                <Explorer ref="explorerRef" />
+            <div class="flex justify-end mb-2">
+                <button
+                    class="bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center shadow"
+                    @click="toggleSidebar" style="z-index:20" title="Hide sidebar">&#10005;</button>
+            </div>
+            <!-- Make Explorer scrollable and fix its height -->
+            <div class="mb-8 flex-1 min-h-0">
+                <div class="h-full overflow-y-auto pr-2">
+                    <Explorer ref="explorerRef" />
+                </div>
             </div>
             <slot></slot>
             <div v-if="!isMobile"

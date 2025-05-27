@@ -28,17 +28,16 @@
                     </svg>
                 </button>
             </div>
-            <!-- Main content -->
             <div class="flex-1 flex items-center">
                 <RunQuery ref="runQueryRef" />
             </div>
         </div>
     </transition>
-    <transition name="bottombar-fade">
-        <button v-if="bottombarHeight <= minHeight"
-            class="fixed left-1/2 -translate-x-1/2 bottom-2 bg-gray-200 rounded px-3 py-1 shadow z-30"
-            @click="restoreBottombar" title="Show bottombar">▲</button>
-    </transition>
+<transition name="bottombar-fade">
+    <button v-if="bottombarHeight <= minHeight"
+        class="fixed right-8 bottom-2 bg-gray-200 rounded px-3 py-1 shadow z-30"
+        @click="restoreBottombar" title="Show bottombar">▲</button>
+</transition>
 </template>
 
 <script setup>

@@ -43,6 +43,17 @@
                 </table>
             </div>
         </div>
+        <div v-else class="flex flex-col items-center justify-center h-40 text-gray-500">
+            <svg class="w-10 h-10 mb-2 text-blue-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+            <span class="text-lg font-medium">
+                No table selected or no data to display.
+            </span>
+            <span class="text-sm">
+                Please select a table to preview its data.
+            </span>
+        </div>
     </div>
 </template>
 

@@ -5,13 +5,19 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class DatabaseController extends Controller
 {
-    public function exportTableToJson($tableName)
+    public function exportTableToJson(Request $request, $tableName)
     {
-        $rows = DB::table($tableName)->paginate(100);
-
+        $columns = $request->query('columns');
+        if ($columns) {
+            $columnsArr = explode(',', $columns);
+            $rows = DB::table($tableName)->select($columnsArr)->paginate(30);
+        } else {
+            $rows = DB::table($tableName)->paginate(100);
+        }
         return response()->json($rows);
     }
 
@@ -26,6 +32,12 @@ class DatabaseController extends Controller
     ");
         $tableNames = array_map(fn($t) => $t->tablename, $tables);
         return response()->json($tableNames);
+    }
+
+    public function getTableColumns($table)
+    {
+        $columns = Schema::getColumnListing($table);
+        return response()->json($columns);
     }
 
     public function runQuery(Request $request)
