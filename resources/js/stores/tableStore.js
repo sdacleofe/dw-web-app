@@ -28,6 +28,7 @@ export const useTableStore = defineStore("table", () => {
         selectedColumns.value[table] = new Set(columns);
     }
 
+    // Old method (for reference)
     async function fetchTableData(table, page = 1, columns = null) {
         selectedTable.value = table;
         let url = `/export/${table}?page=${page}`;
@@ -56,6 +57,30 @@ export const useTableStore = defineStore("table", () => {
         }
     }
 
+    // New Yajra-powered method with column-based filtering support
+    async function fetchTableDataYajra(table, page = 1, perPage = 100, columns = null, filters = {}) {
+        selectedTable.value = table;
+        const start = (page - 1) * perPage;
+        let url = `/api/yajra-table/${table}?start=${start}&length=${perPage}`;
+        if (columns && columns.length > 0) {
+            url += `&columns=${encodeURIComponent(columns.join(","))}`;
+        }
+        // Add filters as query params for column-based search
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value) url += `&columns_search[${encodeURIComponent(key)}]=${encodeURIComponent(value)}`;
+        });
+        const res = await fetch(url);
+        const json = await res.json();
+        tableData.value = json.data || [];
+        pagination.value = {
+            current_page: page,
+            last_page: Math.ceil((json.recordsTotal || 1) / perPage),
+            per_page: perPage,
+            total: json.recordsTotal || 0,
+            table,
+        };
+    }
+
     async function fetchTableColumns(table) {
         try {
             const res = await fetch(`/api/table-columns/${table}`);
@@ -80,7 +105,7 @@ export const useTableStore = defineStore("table", () => {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": token,
                 },
-                body: JSON.stringify({ query, table: selectedTable.value }), // <-- send selected table
+                body: JSON.stringify({ query, table: selectedTable.value }),
             });
             const json = await res.json();
             if (json.error) throw new Error(json.error);
@@ -117,6 +142,7 @@ export const useTableStore = defineStore("table", () => {
         pagination,
         fetchDbTables,
         fetchTableData,
+        fetchTableDataYajra, // <-- expose the new method
         setSelectedTable,
         runQuery,
         fetchTableColumns,

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Yajra\DataTables\DataTables;
 
 class DatabaseController extends Controller
 {
@@ -14,7 +15,7 @@ class DatabaseController extends Controller
         $columns = $request->query('columns');
         if ($columns) {
             $columnsArr = explode(',', $columns);
-            $rows = DB::table($tableName)->select($columnsArr)->paginate(30);
+            $rows = DB::table($tableName)->select($columnsArr)->paginate(10);
         } else {
             $rows = DB::table($tableName)->paginate(100);
         }
@@ -114,5 +115,43 @@ class DatabaseController extends Controller
             echo '"total":' . $total;
             echo '}';
         }, 200, $headers);
+    }
+
+    // Yajra-powered table preview with column-based filtering support
+    public function yajraTable(Request $request, $tableName)
+    {
+        if (!Schema::hasTable($tableName)) {
+            return response()->json([
+                'data' => [],
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+            ]);
+        }
+
+        $query = DB::table($tableName);
+
+        // Column selection via ?columns=col1,col2
+        $columns = $request->query('columns');
+        if ($columns) {
+            $columnsArr = array_filter(explode(',', $columns));
+            if (count($columnsArr)) {
+                $query->select($columnsArr);
+            }
+        }
+
+        // Column-based filtering via ?columns_search[col]=value
+        $columnsSearch = $request->query('columns_search', []);
+        $tableColumns = Schema::getColumnListing($tableName);
+        foreach ($columnsSearch as $col => $val) {
+            if ($val !== '' && in_array($col, $tableColumns)) {
+                if ($col === 'id') {
+                    $query->where($col, $val); // Exact match for ID
+                } else {
+                    $query->where($col, 'ilike', '%' . $val . '%'); // Case-insensitive
+                }
+            }
+        }
+
+        return DataTables::of($query)->toJson();
     }
 }

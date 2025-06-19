@@ -2,7 +2,8 @@
     <div class="flex items-center h-12 px-4">
         <button
             class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-1.5 px-3 rounded flex items-center gap-2"
-            @click="downloadCSV" :disabled="loadingStore.isLoading || !canDownload">
+            @click="showDisclaimer = true"
+            :disabled="loadingStore.isLoading || !canDownload">
             <span v-if="loadingStore.isLoading">
                 <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -11,11 +12,25 @@
             </span>
             <span v-else>Download CSV</span>
         </button>
+
+        <!-- Disclaimer Modal -->
+        <div v-if="showDisclaimer" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+            <div class="bg-white rounded shadow-lg p-6 max-w-md w-full">
+                <h2 class="text-lg font-bold mb-2">Disclaimer</h2>
+                <p class="mb-4">
+                    By downloading this file, you agree that the creators are not liable for any modifications, misuse, or consequences after download. The file is beyond our control once downloaded.
+                </p>
+                <div class="flex justify-end gap-2">
+                    <button class="px-4 py-2 bg-gray-200 rounded" @click="showDisclaimer = false">Cancel</button>
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded" @click="acceptDisclaimer">Accept & Download</button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useTableStore } from '../stores/tableStore'
 import { useNotificationStore } from '../stores/notificationStore'
 import { useLoadingStore } from '../stores/useLoadingStore'
@@ -23,6 +38,8 @@ import { useLoadingStore } from '../stores/useLoadingStore'
 const tableStore = useTableStore()
 const notificationStore = useNotificationStore()
 const loadingStore = useLoadingStore()
+
+const showDisclaimer = ref(false)
 
 const csvSource = computed(() => {
     if (tableStore.tableData && tableStore.tableData.length) {
@@ -44,6 +61,11 @@ const canDownload = computed(() =>
     csvSource.value.rows &&
     csvSource.value.rows.length > 0
 )
+
+function acceptDisclaimer() {
+    showDisclaimer.value = false
+    downloadCSV()
+}
 
 async function downloadCSV() {
     if (!csvSource.value) {

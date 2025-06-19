@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DatabaseController;
 use Inertia\Inertia;
+use App\Http\Controllers\DatabaseController;
 
 Route::get('/', function () {
     return Inertia::render('App');
@@ -13,3 +13,4 @@ Route::get('/export/{table}', [DatabaseController::class, 'exportTableToJson']);
 Route::get('/api/tables', [DatabaseController::class, 'listTables']);
 Route::get('/export-all/{table}', [DatabaseController::class, 'exportTableAll']);
 Route::get('/api/table-columns/{table}', [DatabaseController::class, 'getTableColumns']);
+Route::get('/api/yajra-table/{tableName}', [DatabaseController::class, 'yajraTable']);
