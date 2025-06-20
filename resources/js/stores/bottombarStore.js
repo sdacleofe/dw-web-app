@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 
 export const useBottomBarStore = defineStore('bottomBar', {
     state: () => ({
-        isVisible: true,
+        isVisible: false,
     }),
     actions: {
         toggle() {

@@ -41,15 +41,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useBottomBarStore } from '../stores/bottombarStore'
 import RunQuery from '../Components/RunQuery.vue'
 
 const minHeight = 250
 const maxHeight = 500
-const bottombarHeight = ref(300)
-let isResizing = false
+const bottombarHeight = ref(0) // Start hidden
 
 const runQueryRef = ref(null)
+let isResizing = false
+
+const bottomBarStore = useBottomBarStore()
+
+// Watch store to show/hide bar
+watch(
+    () => bottomBarStore.isVisible,
+    (visible) => {
+        bottombarHeight.value = visible ? 300 : 0
+    },
+    { immediate: true }
+)
 
 function startResize(e) {
     isResizing = true
@@ -70,6 +82,7 @@ function handleResize(e) {
     )
     if (newHeight <= minHeight + 5) {
         bottombarHeight.value = 0
+        bottomBarStore.hide()
         isResizing = false
         document.body.style.cursor = ''
     } else {
@@ -78,11 +91,11 @@ function handleResize(e) {
 }
 
 function minimizeBottombar() {
-    bottombarHeight.value = 0
+    bottomBarStore.hide()
 }
 
 function restoreBottombar() {
-    bottombarHeight.value = 300
+    bottomBarStore.show()
 }
 
 onMounted(() => {

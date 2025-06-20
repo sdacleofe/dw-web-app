@@ -199,7 +199,6 @@ const loadingColumns = ref({})
 const showModal = ref(false)
 const modalType = ref(null)
 const modalTitle = ref('')
-const modalContent = ref('')
 
 const categorySearch = ref('')
 const tableSearch = ref('')
@@ -250,33 +249,15 @@ function resetPreviewTable() {
     tableStore.pagination.total = 0
 }
 
-const modalTable = computed(() => {
-    const match = modalContent.value.match(/table "([^"]+)"/)
-    return match ? match[1] : ''
-})
-const modalColumn = computed(() => {
-    const match = modalContent.value.match(/column "([^"]+)"/)
-    return match ? match[1] : ''
-})
-
-const tableDisplayNames = {
-    lf_population: "Labor Force Population",
-    pov_households: "Poverty Households",
-    nia_gdp: "National Income GDP",
-    inf_prices: "Inflation Prices",
-}
-
 function showTableInfo(table) {
     modalType.value = 'table'
-    modalTitle.value = `Table: ${tableDisplayNames[table] || table}`
-    modalContent.value = `Information about table "${tableDisplayNames[table] || table}".`
+    modalTitle.value = formatName(table)
     showModal.value = true
 }
 
 function showColumnInfo(table, col) {
     modalType.value = 'column'
-    modalTitle.value = `Column: ${col}`
-    modalContent.value = `Information about column "${col}" in table "${tableDisplayNames[table] || table}".`
+    modalTitle.value = `${col} in ${formatName(table)}`
     showModal.value = true
 }
 
@@ -284,7 +265,6 @@ function closeModal() {
     showModal.value = false
     modalType.value = null
     modalTitle.value = ''
-    modalContent.value = ''
 }
 
 const categories = computed(() => [
@@ -322,17 +302,10 @@ const filteredTables = computed(() => {
     )
 })
 
-// Optionally, handle input for table search (not required for datalist, but can be used for custom logic)
-function onTableInput(e) {
-    // You can add custom logic here if needed
-}
-
 const openStates = ref([false, false, false, false])
 
 function toggleDropdown(idx) {
-    // Close all other categories when opening a new one
     openStates.value = openStates.value.map((open, i) => i === idx ? !open : false)
-    // Optionally reset table search when switching categories
     if (openStates.value[idx]) {
         selectedCategoryIdx.value = idx
         tableSearch.value = ''
