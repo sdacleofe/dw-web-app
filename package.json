@@ -24,6 +24,7 @@
         "ag-grid-vue3": "^33.2.4",
         "alasql": "^4.6.6",
         "pinia": "^3.0.2",
-        "vue3-easy-data-table": "^1.5.47"
+        "vue3-easy-data-table": "^1.5.47",
+        "vuetify": "^3.8.10"
     }
 }

@@ -6,41 +6,71 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use Yajra\DataTables\DataTables;
 
 class DatabaseController extends Controller
 {
-    public function exportTableToJson(Request $request, $tableName)
-    {
-        $columns = $request->query('columns');
-        if ($columns) {
-            $columnsArr = explode(',', $columns);
-            $rows = DB::table($tableName)->select($columnsArr)->paginate(10);
-        } else {
-            $rows = DB::table($tableName)->paginate(100);
-        }
-        return response()->json($rows);
-    }
+    const DEFAULT_PAGE_SIZE = 100;
+    const SELECT_PAGE_SIZE = 10;
 
+    /**
+     * Export table data to JSON, optionally selecting columns.
+     */
+public function exportTableToJson(Request $request, $tableName)
+{
+    $columns = $request->query('columns');
+    $perPage = $columns ? self::SELECT_PAGE_SIZE : self::DEFAULT_PAGE_SIZE;
+
+    $query = DB::table($tableName);
+    if ($columns) {
+        $columnsArr = explode(',', $columns);
+        $query->select($columnsArr);
+    }
+    // Handle column-based search
+    $search = $request->query('search', []);
+    foreach ($search as $col => $val) {
+        if ($val !== null && $val !== '') {
+            $query->where($col, 'like', '%' . $val . '%');
+        }
+    }
+    // Handle sorting
+    $sortBy = $request->query('sortBy');
+    $sortOrder = $request->query('sortOrder', 'asc');
+    if ($sortBy) {
+        $query->orderBy($sortBy, $sortOrder);
+    }
+    $rows = $query->paginate($perPage);
+
+    return response()->json($rows);
+}
+
+    /**
+     * List all user tables in the database.
+     */
     public function listTables()
     {
         $tables = DB::select("
-        SELECT tablename
-        FROM pg_catalog.pg_tables
-        WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
-        AND tablename != 'sessions'
-        ORDER BY tablename
-    ");
+            SELECT tablename
+            FROM pg_catalog.pg_tables
+            WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+            AND tablename != 'sessions'
+            ORDER BY tablename
+        ");
         $tableNames = array_map(fn($t) => $t->tablename, $tables);
         return response()->json($tableNames);
     }
 
+    /**
+     * Get all columns for a given table.
+     */
     public function getTableColumns($table)
     {
         $columns = Schema::getColumnListing($table);
         return response()->json($columns);
     }
 
+    /**
+     * Run a safe SELECT query on a single table.
+     */
     public function runQuery(Request $request)
     {
         $sql = $request->input('query');
@@ -68,8 +98,8 @@ class DatabaseController extends Controller
             }
 
             $data = DB::select($sql, []);
-
             $rows = array_map(fn($row) => (array)$row, $data);
+
             return response()->json([
                 'data' => $rows,
                 'headers' => count($rows) ? array_keys($rows[0]) : [],
@@ -85,6 +115,9 @@ class DatabaseController extends Controller
         }
     }
 
+    /**
+     * Export all rows from a table as a streamed JSON response.
+     */
     public function exportTableAll($tableName)
     {
         $query = DB::table($tableName)->select('*');
@@ -115,43 +148,5 @@ class DatabaseController extends Controller
             echo '"total":' . $total;
             echo '}';
         }, 200, $headers);
-    }
-
-    // Yajra-powered table preview with column-based filtering support
-    public function yajraTable(Request $request, $tableName)
-    {
-        if (!Schema::hasTable($tableName)) {
-            return response()->json([
-                'data' => [],
-                'recordsTotal' => 0,
-                'recordsFiltered' => 0,
-            ]);
-        }
-
-        $query = DB::table($tableName);
-
-        // Column selection via ?columns=col1,col2
-        $columns = $request->query('columns');
-        if ($columns) {
-            $columnsArr = array_filter(explode(',', $columns));
-            if (count($columnsArr)) {
-                $query->select($columnsArr);
-            }
-        }
-
-        // Column-based filtering via ?columns_search[col]=value
-        $columnsSearch = $request->query('columns_search', []);
-        $tableColumns = Schema::getColumnListing($tableName);
-        foreach ($columnsSearch as $col => $val) {
-            if ($val !== '' && in_array($col, $tableColumns)) {
-                if ($col === 'id') {
-                    $query->where($col, $val); // Exact match for ID
-                } else {
-                    $query->where($col, 'ilike', '%' . $val . '%'); // Case-insensitive
-                }
-            }
-        }
-
-        return DataTables::of($query)->toJson();
     }
 }

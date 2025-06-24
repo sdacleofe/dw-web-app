@@ -28,58 +28,41 @@ export const useTableStore = defineStore("table", () => {
         selectedColumns.value[table] = new Set(columns);
     }
 
-    // Old method (for reference)
-    async function fetchTableData(table, page = 1, columns = null) {
-        selectedTable.value = table;
-        let url = `/export/${table}?page=${page}`;
-        if (columns && columns.length > 0) {
-            url += `&columns=${encodeURIComponent(columns.join(","))}`;
-        }
-        const res = await fetch(url);
-        const json = await res.json();
-        tableData.value = json.data || json;
-        if (json.current_page) {
-            pagination.value = {
-                current_page: json.current_page,
-                last_page: json.last_page,
-                per_page: json.per_page,
-                total: json.total,
-                table,
-            };
-        } else {
-            pagination.value = {
-                current_page: 1,
-                last_page: 1,
-                per_page: json.length,
-                total: json.length,
-                table,
-            };
-        }
+    async function fetchTableData(table, page = 1, columns = null, search = {}, sortBy = '', sortOrder = 'asc') {
+    selectedTable.value = table;
+    let url = `/export/${table}?page=${page}`;
+    if (columns && columns.length > 0) {
+        url += `&columns=${columns.join(',')}`;
     }
-
-    // New Yajra-powered method with column-based filtering support
-    async function fetchTableDataYajra(table, page = 1, perPage = 100, columns = null, filters = {}) {
-        selectedTable.value = table;
-        const start = (page - 1) * perPage;
-        let url = `/api/yajra-table/${table}?start=${start}&length=${perPage}`;
-        if (columns && columns.length > 0) {
-            url += `&columns=${encodeURIComponent(columns.join(","))}`;
-        }
-        // Add filters as query params for column-based search
-        Object.entries(filters).forEach(([key, value]) => {
-            if (value) url += `&columns_search[${encodeURIComponent(key)}]=${encodeURIComponent(value)}`;
-        });
-        const res = await fetch(url);
-        const json = await res.json();
-        tableData.value = json.data || [];
+    // Add search params
+    Object.entries(search).forEach(([key, value]) => {
+        if (value) url += `&search[${key}]=${encodeURIComponent(value)}`;
+    });
+    // Add sorting params
+    if (sortBy) {
+        url += `&sortBy=${sortBy}&sortOrder=${sortOrder}`;
+    }
+    const res = await fetch(url);
+    const json = await res.json();
+    tableData.value = json.data || json;
+    if (json.current_page) {
         pagination.value = {
-            current_page: page,
-            last_page: Math.ceil((json.recordsTotal || 1) / perPage),
-            per_page: perPage,
-            total: json.recordsTotal || 0,
-            table,
+            current_page: json.current_page,
+            last_page: json.last_page,
+            per_page: json.per_page,
+            total: json.total,
+            table: table,
+        };
+    } else {
+        pagination.value = {
+            current_page: 1,
+            last_page: 1,
+            per_page: 100,
+            total: tableData.value.length,
+            table: table,
         };
     }
+}
 
     async function fetchTableColumns(table) {
         try {
@@ -142,7 +125,6 @@ export const useTableStore = defineStore("table", () => {
         pagination,
         fetchDbTables,
         fetchTableData,
-        fetchTableDataYajra, // <-- expose the new method
         setSelectedTable,
         runQuery,
         fetchTableColumns,
